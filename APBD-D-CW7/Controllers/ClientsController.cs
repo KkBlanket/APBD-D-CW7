@@ -20,4 +20,18 @@ public class ClientsController(IDbService service) : ControllerBase
             return NotFound(e.Message);
         }
     }
+
+    [HttpPost]
+    public async Task<IActionResult> CreateClientAsync([FromBody]ClientCreateDTO client)
+    {
+        try
+        {
+            var id = await service.CreateClientAsync(client);
+            return Ok($"Client created with id {id.Id}");
+        }
+        catch (Exception e)
+        {
+            return BadRequest(e.Message);
+        }
+    }
 }

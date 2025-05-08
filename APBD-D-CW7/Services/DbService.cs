@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using APBD_D_CW7.Exceptions;
 using APBD_D_CW7.Models.DTOs;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.Data.SqlClient;
 
 namespace APBD_D_CW7.Services;
@@ -95,8 +96,45 @@ public class DbService(IConfiguration config) : IDbService
         return result;
     }
 
-    public Task<ClientCreateDTO> CreateClientAsync(ClientCreateDTO client)
+    public async Task<ClientCreateDTO> CreateClientAsync(ClientCreateDTO client)
     {
-        throw new NotImplementedException();
+        try
+        {
+            var connectionString = config.GetConnectionString("Default");
+            var sql = @"Insert Into Client (FirstName,LastName,Email,Telephone,Pesel)
+            values (@FirstName,@LastName,@Email,@Telephone,@Pesel);
+Select SCOPE_IDENTITY();";
+
+            await using var connection = new SqlConnection(connectionString);
+            await using var command = new SqlCommand(sql, connection);
+
+            command.Parameters.AddWithValue("@FirstName", client.FirstName);
+            command.Parameters.AddWithValue("@LastName", client.LastName);
+            command.Parameters.AddWithValue("@Email", client.Email);
+            command.Parameters.AddWithValue("@Telephone", client.Telephone);
+            command.Parameters.AddWithValue("@Pesel", client.Pesel);
+
+            await connection.OpenAsync();
+            var id = Convert.ToInt32(await command.ExecuteScalarAsync());
+
+            return new ClientCreateDTO()
+            {
+                Id = id,
+                FirstName = client.FirstName,
+                LastName = client.LastName,
+                Email = client.Email,
+                Telephone = client.Telephone,
+                Pesel = client.Pesel,
+            };
+        }
+        catch (SqlException ex)
+        {
+            throw new Exception("Blad bazy danych" + ex.Message);
+        }
+        catch (Exception ex)
+        {
+            throw new Exception("Blad aplikacji" + ex.Message);
+        }
+
     }
 }

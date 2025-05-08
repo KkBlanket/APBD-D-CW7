@@ -38,6 +38,28 @@ public class ClientsController(IDbService service) : ControllerBase
     [HttpPut("{id}/trips/{tripId}")]
     public async Task<IActionResult> PutClientOnTripAsync(int id, int tripId)
     {
-        return Ok("Client added to trip successfully");
+        try
+        {
+            await service.ClientAddToTripAsync(id, tripId);
+            return Ok("Client added to trip successfully");
+        }
+        catch (Exception e)
+        {
+            return NotFound(e.Message);
+        }
+    }
+
+    [HttpDelete("{id}/trips/{tripId}")]
+    public async Task<IActionResult> DeleteClientFromTripAsync(int id, int tripId)
+    {
+        try
+        {
+            await service.ClientRemoveFromTripAsync(id, tripId);
+            return Ok("Client deleted from trip successfully");
+        }
+        catch (Exception e)
+        {
+            return NotFound(e.Message);
+        }
     }
 }

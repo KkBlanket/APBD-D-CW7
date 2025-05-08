@@ -34,4 +34,10 @@ public class ClientsController(IDbService service) : ControllerBase
             return BadRequest(e.Message);
         }
     }
+
+    [HttpPut("{id}/trips/{tripId}")]
+    public async Task<IActionResult> PutClientOnTripAsync(int id, int tripId)
+    {
+        return Ok("Client added to trip successfully");
+    }
 }

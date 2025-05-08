@@ -137,4 +137,54 @@ Select SCOPE_IDENTITY();";
         }
 
     }
+
+    public async Task<bool> ClientAddToTripAsync(int idTrip, int idClient)
+    {
+        var connectionString = config.GetConnectionString("Default");
+        var sql = "Select 1 From Client where IdClient = @idClient AND EXISTS(SELECT 1 FROM Client_Trip WHERE IdTrip = @idTrip);";
+        await using var connection = new SqlConnection(connectionString);
+        await using var command = new SqlCommand(sql, connection);
+        
+        command.Parameters.AddWithValue("@IdClient", idClient);
+        command.Parameters.AddWithValue("@IdTrip", idTrip);
+        
+        await connection.OpenAsync();
+        
+        var result = await command.ExecuteScalarAsync();
+
+        if (result != null)
+        {
+            var howManyPeople = "Select count(IdClient) from Client_Trip where IdTrip = @idTrip";
+            command.CommandText = howManyPeople;
+            command.Parameters.Clear();
+            command.Parameters.AddWithValue("@IdTrip", idTrip);
+            var howMany = Convert.ToInt32(await command.ExecuteScalarAsync()) ;
+            var sql2 = "Select MaxPeople from Trip where IdTrip = @idTrip";
+            command.CommandText = sql2;
+            command.Parameters.Clear();
+            command.Parameters.AddWithValue("@IdTrip", idTrip);
+            var maxPeople = Convert.ToInt32(await command.ExecuteScalarAsync());
+            if (howMany < maxPeople)
+            {
+                var sql3 = "Insert into Client_Trip (IdClient, IdTrip,RegisteredAt) values (@IdClient, @IdTrip,1)";
+                command.CommandText = sql3;
+                command.Parameters.Clear();
+                command.Parameters.AddWithValue("@IdClient", idClient);
+                command.Parameters.AddWithValue("@IdTrip", idTrip);
+                await command.ExecuteScalarAsync();
+                return true;
+
+            }
+            else
+            {
+                throw new Exception($"Too many people signed to trip with id: {idTrip}");
+            }
+            
+        }
+        else
+        {
+            throw new NotFoundException($"Client with ID {idClient} not found or Trip with ID {idTrip} not exists");
+        }
+        
+    }
 }
